@@ -43,23 +43,39 @@ function App() {
         name: name,
         wins: 0,
         losses: 0,
-        trophies: 0,
+        trophies: 1850,
       });
     }
   }
 
   function calculateWinnerScore(winner, loser) {
+    let kFactor = 0
+    if (winner.trophies < 2100) {
+      kFactor = 32
+    } else if (winner.trophies >= 2100 && winner.trophies <= 2400) {
+      kFactor = 24
+    } else {
+      kFactor = 16
+    }
     let factor =
       1 / (1 + Math.pow(10, (winner.trophies - loser.trophies) / 400));
-    console.log("Winner " + winner.trophies + 16 * (1 - factor));
-    return winner.trophies + 16 * (1 - factor);
+    console.log("Winner " + winner.trophies + kFactor * (1 - factor));
+    return winner.trophies + kFactor * (1 - factor);
   }
 
   function calculateLoserScore(winner, loser) {
+    let kFactor = 0
+    if (loser.trophies < 2100) {
+      kFactor = 32
+    } else if (loser.trophies >= 2100 && loser.trophies <= 2400) {
+      kFactor = 24
+    } else {
+      kFactor = 16
+    }
     let factor =
       1 / (1 + Math.pow(10, (loser.trophies - winner.trophies) / 400));
-    console.log("Loser " + loser.trophies + 16 * (0 - factor));
-    return loser.trophies + 16 * (0 - factor);
+    console.log("Loser " + loser.trophies + kFactor * (0 - factor));
+    return loser.trophies + kFactor * (0 - factor);
   }
 
   function recordAction() {
@@ -112,7 +128,7 @@ function App() {
                   name={pl.name}
                   wins={pl.wins}
                   losses={pl.losses}
-                  trophies={pl.trophies}
+                  trophies={Math.round(pl.trophies)}
                   first={true}
                 />
               ) : (
@@ -120,7 +136,7 @@ function App() {
                   name={pl.name}
                   wins={pl.wins}
                   losses={pl.losses}
-                  trophies={pl.trophies}
+                  trophies={Math.round(pl.trophies)}
                   first={false}
                 />
               )
