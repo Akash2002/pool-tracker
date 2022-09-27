@@ -59,8 +59,12 @@ function App() {
     }
     let factor =
       1 / (1 + Math.pow(10, (winner.trophies - loser.trophies) / 400));
+<<<<<<< HEAD
     console.log("Winner " + winner.trophies + kFactor * (1 - factor));
     return winner.trophies + kFactor * (1 - factor);
+=======
+    return winner.trophies + 16 * (1 - factor);
+>>>>>>> b89c8bc (update trophies)
   }
 
   function calculateLoserScore(winner, loser) {
@@ -74,8 +78,12 @@ function App() {
     }
     let factor =
       1 / (1 + Math.pow(10, (loser.trophies - winner.trophies) / 400));
+<<<<<<< HEAD
     console.log("Loser " + loser.trophies + kFactor * (0 - factor));
     return loser.trophies + kFactor * (0 - factor);
+=======
+    return loser.trophies + 16 * (0 - factor);
+>>>>>>> b89c8bc (update trophies)
   }
 
   function recordAction() {
