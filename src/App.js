@@ -58,7 +58,7 @@ function App() {
       kFactor = 16
     }
     let factor =
-      1 / (1 + Math.pow(10, (winner.trophies - loser.trophies) / 400));
+      1 / (1 + Math.pow(10, (loser.trophies - winner.trophies) / 400));
 
     console.log("Winner " + winner.trophies + kFactor * (1 - factor));
     return winner.trophies + kFactor * (1 - factor);
@@ -76,7 +76,7 @@ function App() {
       kFactor = 16
     }
     let factor =
-      1 / (1 + Math.pow(10, (loser.trophies - winner.trophies) / 400));
+      1 / (1 + Math.pow(10, (winner.trophies - loser.trophies) / 400));
 
     console.log("Loser " + loser.trophies + kFactor * (0 - factor));
     return loser.trophies + kFactor * (0 - factor);
