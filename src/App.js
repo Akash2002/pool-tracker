@@ -1,9 +1,10 @@
 import "./App.css";
 import { Button } from "@mui/material";
 import "./db";
-import { database } from "./db";
+import { database, firebase } from "./db";
 import React, { useEffect, useState } from "react";
 import Item from "./Item";
+import { data } from "autoprefixer";
 
 function App() {
   const [players, setPlayers] = useState();
@@ -51,40 +52,61 @@ function App() {
   function calculateWinnerScore(winner, loser) {
     let kFactor = 0
     if (winner.trophies < 2100) {
-      kFactor = 32
+      kFactor = 64
     } else if (winner.trophies >= 2100 && winner.trophies <= 2400) {
-      kFactor = 24
+      kFactor = 48
     } else {
-      kFactor = 16
+      kFactor = 32
     }
     let factor =
       1 / (1 + Math.pow(10, (loser.trophies - winner.trophies) / 400));
 
     console.log("Winner " + winner.trophies + kFactor * (1 - factor));
     return winner.trophies + kFactor * (1 - factor);
-
-    
   }
 
   function calculateLoserScore(winner, loser) {
     let kFactor = 0
     if (loser.trophies < 2100) {
-      kFactor = 32
+      kFactor = 64
     } else if (loser.trophies >= 2100 && loser.trophies <= 2400) {
-      kFactor = 24
+      kFactor = 48
     } else {
-      kFactor = 16
+      kFactor = 32
     }
     let factor =
       1 / (1 + Math.pow(10, (winner.trophies - loser.trophies) / 400));
 
     console.log("Loser " + loser.trophies + kFactor * (0 - factor));
     return loser.trophies + kFactor * (0 - factor);
-
-    
   }
 
-  function recordAction() {
+  function simulate() {
+    database.collection("history").doc("history").get().then(doc => {
+      console.log(doc);
+      if (!doc.exists) {
+        console.log("Doc does not exist");
+      } else {
+        const data = doc.data();
+        console.log(data);
+        for (const [key, value] of Object.entries(data)) {
+          if (key == "size") {
+            break;
+          }
+          console.log(value.winner)
+          recordAction(value.winner, value.loser);
+        }
+      }
+    })
+  }
+
+  function recordAction(winner = "", loser = "") {
+
+    let shouldSimulate = false;
+    if (winner != "" && loser != "") {
+      shouldSimulate = true;
+    }
+
     let winText = "Who won? Enter number next to the name: \n";
     let loseText = "Who lost? Enter number next to the name: \n";
     let nameEncoding = "";
@@ -94,29 +116,62 @@ function App() {
     winText += nameEncoding;
     loseText += nameEncoding;
 
-    let winIndex = prompt(winText);
-    let loseIndex = prompt(loseText);
+    let winIndex = 0;
+    let loseIndex = 0;
+
+    if (shouldSimulate) {
+      winIndex = players.findIndex(player => player.name === winner);
+      loseIndex = players.findIndex(player => player.name === loser);
+    } else {
+      winIndex = prompt(winText);
+      loseIndex = prompt(loseText);
+    }
 
     if (winIndex <= players.length && loseIndex <= players.length) {
       let winner = players[winIndex];
       let loser = players[loseIndex];
-      console.log(winner.name);
-      console.log(loser.name);
-      database
-        .collection("jackasses")
-        .doc(winner.id)
-        .update({
-          wins: winner.wins + 1,
-          trophies: calculateWinnerScore(winner, loser),
-        });
 
-      database
-        .collection("jackasses")
-        .doc(loser.id)
-        .update({
-          losses: loser.losses + 1,
-          trophies: calculateLoserScore(winner, loser),
+      database.collection("jackasses").doc(winner.id)
+      .update({
+        history: firebase.firestore.FieldValue.arrayUnion(loser.id)
+      });
+
+      database.collection("jackasses").doc(loser.id)
+      .update({
+        history: firebase.firestore.FieldValue.arrayUnion(winner.id)
+      });
+      if (!shouldSimulate) {
+        database.collection("history").doc("history").get().then(doc => {
+          if (!doc.exists) {
+            console.log("Data does not exist")
+          } else {
+            let d = doc.data();
+            let index = d.size + 1;
+            database.collection("history").doc("history").update({size: index});
+            database.collection("history").doc("history").update({
+              [index]: {
+                winner: winner.name,
+                loser: loser.name
+              }
+            });
+          }
         });
+      }
+    database
+      .collection("jackasses")
+      .doc(winner.id)
+      .update({
+        wins: winner.wins + 1,
+        trophies: calculateWinnerScore(winner, loser),
+      });
+
+    database
+      .collection("jackasses")
+      .doc(loser.id)
+      .update({
+        losses: loser.losses + 1,
+        trophies: calculateLoserScore(winner, loser),
+      });
     } else {
       alert("Please re-record with correct values");
     }
@@ -157,6 +212,9 @@ function App() {
           </Button>
           <Button onClick={() => joinAction()} variant="contained">
             Join
+          </Button>
+          <Button onClick={() => simulate()} variant="contained">
+            Simulate
           </Button>
         </div>
       </div>
