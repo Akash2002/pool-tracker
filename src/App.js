@@ -11,9 +11,7 @@ function App() {
 
   useEffect(() => {
     database.collection("jackasses").onSnapshot((snapshot) => {
-      if (!snapshot.exists) {
-        console.log("Doc not found");
-      }
+      
       let ret = [
         {
           name: "Name",
@@ -60,8 +58,6 @@ function App() {
     }
     let factor =
       1 / (1 + Math.pow(10, (loser.trophies - winner.trophies) / 400));
-
-    console.log("Winner " + winner.trophies + kFactor * (1 - factor));
     return winner.trophies + kFactor * (1 - factor);
   }
 
@@ -76,24 +72,33 @@ function App() {
     }
     let factor =
       1 / (1 + Math.pow(10, (winner.trophies - loser.trophies) / 400));
-
-    console.log("Loser " + loser.trophies + kFactor * (0 - factor));
     return loser.trophies + kFactor * (0 - factor);
   }
 
   function simulate() {
+    database.collection("jackasses").get().then(snapshot => {
+      console.log(snapshot)
+      snapshot.forEach(doc => {
+        let id = doc.id;
+        database.collection("jackasses").doc(id).update({
+          history: [],
+          losses: 0,
+          wins: 0,
+          name: doc.data().name,
+          trophies: 1850
+        })
+      })
+    })
+
     database.collection("history").doc("history").get().then(doc => {
-      console.log(doc);
       if (!doc.exists) {
         console.log("Doc does not exist");
       } else {
         const data = doc.data();
-        console.log(data);
         for (const [key, value] of Object.entries(data)) {
           if (key == "size") {
             break;
           }
-          console.log(value.winner)
           recordAction(value.winner, value.loser);
         }
       }
@@ -131,32 +136,34 @@ function App() {
       let winner = players[winIndex];
       let loser = players[loseIndex];
 
-      database.collection("jackasses").doc(winner.id)
-      .update({
-        history: firebase.firestore.FieldValue.arrayUnion(loser.id)
-      });
+    database.collection("jackasses").doc(winner.id)
+    .update({
+      history: firebase.firestore.FieldValue.arrayUnion(loser.id)
+    });
 
-      database.collection("jackasses").doc(loser.id)
-      .update({
-        history: firebase.firestore.FieldValue.arrayUnion(winner.id)
+    database.collection("jackasses").doc(loser.id)
+    .update({
+      history: firebase.firestore.FieldValue.arrayUnion(winner.id)
+    });
+
+    if (!shouldSimulate) {
+      database.collection("history").doc("history").get().then(doc => {
+        if (!doc.exists) {
+          console.log("Data does not exist")
+        } else {
+          let d = doc.data();
+          let index = d.size + 1;
+          database.collection("history").doc("history").update({size: index});
+          database.collection("history").doc("history").update({
+            [index]: {
+              winner: winner.name,
+              loser: loser.name
+            }
+          });
+        }
       });
-      if (!shouldSimulate) {
-        database.collection("history").doc("history").get().then(doc => {
-          if (!doc.exists) {
-            console.log("Data does not exist")
-          } else {
-            let d = doc.data();
-            let index = d.size + 1;
-            database.collection("history").doc("history").update({size: index});
-            database.collection("history").doc("history").update({
-              [index]: {
-                winner: winner.name,
-                loser: loser.name
-              }
-            });
-          }
-        });
-      }
+    }
+    console.log(winner.wins);
     database
       .collection("jackasses")
       .doc(winner.id)
